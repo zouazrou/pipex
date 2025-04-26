@@ -33,8 +33,8 @@ void exec_middle(pipex_t *data)
             perror("dup2");
         close(fd[1]);
         // Execute command
-        fprintf(stderr, "(1) %s, %s\n", data->path[idx], *data->cmd[idx]);
-        execve(data->path[idx], data->cmd[idx], data->env);
+		char *arg[] = {"grep", ".c", NULL};
+        execve("/usr/bin/grep", arg, data->env);
         perror("execve1");
         return ;
     }
@@ -53,12 +53,14 @@ int main(int argc, char const *argv[], char **env)
     data = init_struct(NUM, env);
     data->prev_fd = 0;
     idx = 1;
+	// fprintf(stderr, "cmd 1 path %s| 1=%s\n", data->cmd[0][0], data->cmd[0][1]);
+	// fprintf(stderr, "cmd 2 path %s| 1=%s\n", data->cmd[1][0], data->cmd[1][1]);
     // execate first cmd manual
     exec_first(data);
     // while (data->path[idx + 1])
     // {
     //     // execate middle cmds
-    //     exec_middle(data);
+        exec_middle(data);
     //     data->count++;
     //     idx++;
     // }
@@ -66,11 +68,15 @@ int main(int argc, char const *argv[], char **env)
     // execate last cmd manual
     exec_last(data);
     int i = 2;
-    while (i--)
-    {
-        while ((wait(NULL) != -1 || errno != ECHILD))
-            printf("wait...\n");
-    }
+	while ((wait(NULL) > 0))
+		printf("wait...\n");
     free(data);
     return 0;
 }
+
+/*
+test tree cmds :
+
+ls | grep .c | wc
+
+*/

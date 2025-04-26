@@ -9,9 +9,11 @@ void exec_first(pipex_t *data)
     if (pipe(fd) == -1)
         exit (4);
     idx = data->count++;
-    
+
     // Create Child
     data->pid[idx] = fork();
+	if (data->pid[idx] == -1)
+		exit ((perror("fork"), 1));
     // Child
     if (data->pid[idx] == 0)
     {
@@ -21,14 +23,13 @@ void exec_first(pipex_t *data)
         if (dup2(fd[1], STDOUT_FILENO) == -1)
             perror("df");
         close(fd[1]);
-        // Execute command
-        fprintf(stderr, "(2) %s, %s\n", data->path[idx], *data->cmd[idx]);
-        execve(data->path[idx], data->cmd[idx], data->env);
+		char *arg[] = {"ls", NULL};
+        execve("/usr/bin/ls", arg, data->env);
         perror("execve2");
-        return ;
+        exit(9) ;
     }
-    data->prev_fd = fd[0];
     close(fd[1]);
+    data->prev_fd = fd[0];
 }
 
 void exec_last(pipex_t *data)
@@ -39,6 +40,8 @@ void exec_last(pipex_t *data)
     idx = data->count;
     // Create Child
     data->pid[idx] = fork();
+	if (data->pid[idx] == -1)
+		exit ((perror("fork"), 2));
     // Child
     if (data->pid[idx] == 0)
     {
@@ -47,10 +50,10 @@ void exec_last(pipex_t *data)
             perror("df");
         close(data->prev_fd);
         // Execute command
-        fprintf(stderr, "(3) %s, %s\n", data->path[idx], *data->cmd[idx]);
-        execve(data->path[idx], data->cmd[idx], data->env);
+		char *arg[] = {"wc", NULL};
+        execve("/usr/bin/wc", arg, data->env);
         perror("execve3");
-        return ;
+        exit (1);
     }
     close(data->prev_fd);
 }
@@ -58,8 +61,7 @@ void exec_last(pipex_t *data)
 pipex_t    *init_struct(int num, char **env)
 {
     pipex_t     *data;
-    char *c1[] = {"ls", NULL};
-    char *c2[] = {"wc", NULL};
+
 
     data = malloc(sizeof(pipex_t));
     if (!data)
@@ -74,15 +76,20 @@ pipex_t    *init_struct(int num, char **env)
     if (!data->pid)
         exit ((free(data->cmd), 4));
     // just test
-    data->cmd[0] = c1;
-    data->cmd[1] = c2;
+	malloc(sizeof(char *) * 2);
+	char *c1[] = {"/usr/bin/ls", NULL};
+    char *c2[] = {"/usr/bin/wc", NULL};
+    // data->cmd[0] = &c1;
+    // data->cmd[1] = &c2;
     data->cmd[num] = NULL;
+	// path
     data->path[0] = "/usr/bin/ls";
-    data->path[1] = "/usr/bin/wc"; 
+    data->path[1] = "/usr/bin/wc";
     data->path[num] = NULL;
     // end test
 
     data->env = env;
     data->count = 0;
     data->prev_fd = -42;
+	return (data);
 }

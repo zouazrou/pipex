@@ -3,10 +3,9 @@ CC = cc
 # (gdb) set follow-fork-mode child  # Attach to child instead of parent
 # (gdb) break some_function        # Set breakpoints
 # (gdb) run                        # Start execution
-CFLAGS = -g  	
+CFLAGS = -g
 
-SRC = main.c utils.c pipex.c
-
+SRC = main.c utils.c 
 OBJ = $(SRC:.c=.o)
 
 NAME = pipex
