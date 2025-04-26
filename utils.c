@@ -11,9 +11,9 @@ void exec_first(pipex_t *data)
     idx = data->count++;
     
     // Create Child
-    pid = fork();
+    data->pid[idx] = fork();
     // Child
-    if (pid == 0)
+    if (data->pid[idx] == 0)
     {
         // Close unused fd
         close(fd[0]);
@@ -22,10 +22,12 @@ void exec_first(pipex_t *data)
             perror("df");
         close(fd[1]);
         // Execute command
+        fprintf(stderr, "(2) %s, %s\n", data->path[idx], *data->cmd[idx]);
         execve(data->path[idx], data->cmd[idx], data->env);
-        perror("execve");
+        perror("execve2");
         return ;
     }
+    data->prev_fd = fd[0];
     close(fd[1]);
 }
 
@@ -36,36 +38,41 @@ void exec_last(pipex_t *data)
 
     idx = data->count;
     // Create Child
-    pid = fork();
+    data->pid[idx] = fork();
     // Child
-    if (pid == 0)
+    if (data->pid[idx] == 0)
     {
         // Duplicate read end of pipe to STDIN
         if (dup2(data->prev_fd, STDIN_FILENO) == -1)
             perror("df");
         close(data->prev_fd);
         // Execute command
+        fprintf(stderr, "(3) %s, %s\n", data->path[idx], *data->cmd[idx]);
         execve(data->path[idx], data->cmd[idx], data->env);
-        perror("execve");
+        perror("execve3");
         return ;
     }
+    close(data->prev_fd);
 }
 
-void    init_struct(pipex_t *data, int num, char **env)
+pipex_t    *init_struct(int num, char **env)
 {
+    pipex_t     *data;
     char *c1[] = {"ls", NULL};
-    char *c2[] = {"wc", "-w", NULL};
+    char *c2[] = {"wc", NULL};
 
     data = malloc(sizeof(pipex_t));
     if (!data)
         exit((perror("malooc"), 1));
     data->cmd = malloc((num + 1) * sizeof(char **));
     if (!data->cmd)
-        exit (1);
+        exit (2);
     data->path = malloc((num + 1) * sizeof(char *));
     if (!data->path)
-        exit ((free(data->cmd), 2));
-
+        exit ((free(data->cmd), 3));
+    data->pid = malloc((num) * sizeof(int));
+    if (!data->pid)
+        exit ((free(data->cmd), 4));
     // just test
     data->cmd[0] = c1;
     data->cmd[1] = c2;

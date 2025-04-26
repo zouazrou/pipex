@@ -21,10 +21,10 @@ void exec_middle(pipex_t *data)
     // Store curr read end of pipe
     data->prev_fd = fd[0];
     // Create Child
-    pid = fork();
+    data->pid[idx] = fork();
 
     // Child
-    if (pid == 0)
+    if (data->pid[idx] == 0)
     {
         // Close Read end Because we are not use it
         close(fd[0]);
@@ -33,8 +33,9 @@ void exec_middle(pipex_t *data)
             perror("dup2");
         close(fd[1]);
         // Execute command
+        fprintf(stderr, "(1) %s, %s\n", data->path[idx], *data->cmd[idx]);
         execve(data->path[idx], data->cmd[idx], data->env);
-        perror("execve");
+        perror("execve1");
         return ;
     }
     // Close curr write end of pipe in Parrent Because We are not use it
@@ -49,23 +50,26 @@ int main(int argc, char const *argv[], char **env)
     (void)argc;
     (void)argv;
     data = NULL;
-    init_struct(data, NUM, env);
+    data = init_struct(NUM, env);
     data->prev_fd = 0;
     idx = 1;
     // execate first cmd manual
     exec_first(data);
-    while (data->path[idx + 1])
-    {
-        // execate middle cmds
-        exec_middle(data);
-        data->count++;
-        idx++;
-    }
+    // while (data->path[idx + 1])
+    // {
+    //     // execate middle cmds
+    //     exec_middle(data);
+    //     data->count++;
+    //     idx++;
+    // }
+    // data->count
     // execate last cmd manual
     exec_last(data);
-    while (wait(NULL) != -1 || errno != ECHILD)
+    int i = 2;
+    while (i--)
     {
-        printf("wait...\n");
+        while ((wait(NULL) != -1 || errno != ECHILD))
+            printf("wait...\n");
     }
     free(data);
     return 0;

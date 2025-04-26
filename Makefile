@@ -1,7 +1,9 @@
 CC = cc
 # valgrind --tool=helgrind ./philo 2 450 200 200
-# -Wall -Wextra -Werror -fsanitize=thread
-CFLAGS = -Wall -Wextra -Werror
+# (gdb) set follow-fork-mode child  # Attach to child instead of parent
+# (gdb) break some_function        # Set breakpoints
+# (gdb) run                        # Start execution
+CFLAGS = -g  	
 
 SRC = main.c utils.c pipex.c
 
