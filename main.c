@@ -1,7 +1,5 @@
 #include "pipex.h"
 
-#define NUM 2
-
 // ls | grep as | wc -l
 void exec_middle(pipex_t *data)
 {
@@ -11,7 +9,8 @@ void exec_middle(pipex_t *data)
 
     if (pipe(fd) == -1)
         exit(3);
-    idx = data->count;
+    idx = data->count++;
+	fprintf(stderr, "midd idx = %d\n", idx);
     // Duplicate prev read end of pipe to STDIN
     if (dup2(data->prev_fd, STDIN_FILENO) == -1)
         perror("dup2");
@@ -33,8 +32,26 @@ void exec_middle(pipex_t *data)
             perror("dup2");
         close(fd[1]);
         // Execute command
-		char *arg[] = {"grep", ".c", NULL};
-        execve("/usr/bin/grep", arg, data->env);
+		if (idx == 1)
+		{
+			char *arg[] = {"grep", "404", NULL};
+			execve("/usr/bin/grep", arg, data->env);
+		}
+		else if (idx == 2)
+		{
+			char *arg[] = {"awk", "{print $1}", NULL};
+			execve("/usr/bin/awk", arg, data->env);
+		}
+		else if (idx == 3)
+		{
+			char *arg[] = {"sort", NULL};
+			execve("/usr/bin/sort", arg, data->env);
+		}
+		else if (idx == 4)
+		{
+			char *arg[] = {"uniq", NULL};
+			execve("/usr/bin/uniq", arg, data->env);
+		}
         perror("execve1");
         return ;
     }
@@ -44,34 +61,33 @@ void exec_middle(pipex_t *data)
 // ls | wc -w -> 10
 int main(int argc, char const *argv[], char **env)
 {
-    pipex_t *data;
-    int     idx;
+    pipex_t data;
 
     (void)argc;
     (void)argv;
-    data = NULL;
-    data = init_struct(NUM, env);
-    data->prev_fd = 0;
-    idx = 1;
-	// fprintf(stderr, "cmd 1 path %s| 1=%s\n", data->cmd[0][0], data->cmd[0][1]);
-	// fprintf(stderr, "cmd 2 path %s| 1=%s\n", data->cmd[1][0], data->cmd[1][1]);
+    init_struct(&data, NUM, env);
+    data.prev_fd = 0;
+	/*
+	num_cmd = 3
+	count
+		ls | grep ".c" | wc -l
+		0  |   	1      |    2
+	*/
     // execate first cmd manual
-    exec_first(data);
-    // while (data->path[idx + 1])
-    // {
-    //     // execate middle cmds
-        exec_middle(data);
-    //     data->count++;
-    //     idx++;
-    // }
-    // data->count
+    exec_first(&data);
+    while (data.count < (data.num_cmd - 1))
+    {
+		// execate middle cmds
+        exec_middle(&data);
+    }
+    // data.count
     // execate last cmd manual
-    exec_last(data);
+    exec_last(&data);
     int i = 2;
 	while ((wait(NULL) > 0))
 		printf("wait...\n");
-    free(data);
-    return 0;
+    clean_all(&data, EXIT_SUCCESS);
+    return (EXIT_SUCCESS);
 }
 
 /*

@@ -1,11 +1,11 @@
 CC = cc
-# valgrind --tool=helgrind ./philo 2 450 200 200
+# valgrind --track-fds=yes
 # (gdb) set follow-fork-mode child  # Attach to child instead of parent
 # (gdb) break some_function        # Set breakpoints
 # (gdb) run                        # Start execution
 CFLAGS = -g
 
-SRC = main.c utils.c 
+SRC = main.c utils.c
 OBJ = $(SRC:.c=.o)
 
 NAME = pipex
